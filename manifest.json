@@ -1,0 +1,22 @@
+{
+  "name": "lú-hîng",
+  "short_name": "lú-hîng",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#F9F9F7",
+  "theme_color": "#F9F9F7",
+  "orientation": "portrait",
+  "scope": ".",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
