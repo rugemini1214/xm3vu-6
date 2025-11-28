@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>lú-hîng</title>
+    <!-- PWA 必要設定 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
+    <meta name="theme-color" content="#F9F9F7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- 字體載入 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* 日系大地色系 - 酒紅/乾燥玫瑰 */
+            --bg-color: #F9F9F7;
+            --text-main: #4A4A4A;
+            --text-sub: #8C8C8C;
+            --accent-color: #A55D57; /* 乾燥玫瑰紅 */
+            --accent-hover: #8F4F4A;
+            --line-color: #E6E2DC;
+            --input-bg: #FFFFFF;
+            --item-bg: #F0F0EB;
+            
+            /* 功能色 */
+            --green-safe: #769174;
+            --red-danger: #C27070;
+            
+            /* Tags - 深色底 */
+            --tag-bg-dark: #6D5454;
+            --tag-bg-shopping: #8E4C4C;
+            --tag-bg-food: #9E7D47;
+            --tag-bg-spot: #5A7A68;
+            --tag-bg-other: #66757A;
+
+            /* Progress Bar Colors */
+            --color-cash: #D4AC0D;
+            --color-credit: #A55D57;
+            --color-ic: #8D6E63;
+
+            /* Spacing & Radius */
+            --sat: env(safe-area-inset-top);
+            --sab: env(safe-area-inset-bottom);
+            --radius-std: 8px;
+            --radius-btn: 20px;
+        }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        html, body {
+            width: 100%; height: 100%; margin: 0; padding: 0;
+            overflow: hidden; font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color); color: var(--text-main);
+            display: flex; flex-direction: column;
+            -webkit-user-select: none; user-select: none;
+            font-size: 15px; /* 全域基礎字體 */
+            line-height: 1.5;
+        }
+
+        /* 強制表單元件字體一致性 */
+        input, select, button, textarea { 
+            font-family: inherit; outline: none; border: none; appearance: none; 
+            font-size: 15px; 
+        }
+        a { color: inherit; text-decoration: none; }
+
+        /* Header */
+        .header-container {
+            flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+            padding: calc(12px + var(--sat)) 16px 12px 16px;
+            background: var(--bg-color); border-bottom: 1px solid var(--line-color);
+            height: calc(64px + var(--sat));
+        }
+        .dashboard-side { 
+            display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+            gap: 2px;
+        }
+        .date-display { font-size: 18px; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; }
+        .weather-link { font-size: 12px; color: var(--text-sub); display: inline-flex; align-items: center; }
+
+        .nav-side { display: flex; gap: 8px; align-items: center; }
+        .nav-btn {
+            padding: 4px 12px; border: 1px solid var(--line-color); border-radius: var(--radius-btn);
+            font-size: 13px; color: var(--text-sub); background: #fff; cursor: pointer;
+            transition: all 0.2s; height: 30px; display: flex; align-items: center;
+        }
+        .nav-btn.active { background: var(--text-main); color: #fff; border-color: var(--text-main); }
+
+        /* Tabs */
+        .tab-container {
+            flex: 0 0 44px; display: flex; overflow-x: auto; padding: 0 10px; 
+            background: var(--bg-color); border-bottom: 1px solid var(--line-color);
+            align-items: center; scrollbar-width: none;
+        }
+        .tab-container::-webkit-scrollbar { display: none; }
+        .tab {
+            padding: 0 14px; height: 100%; display: flex; align-items: center;
+            font-size: 14px; color: var(--text-sub); cursor: pointer; white-space: nowrap; position: relative;
+        }
+        .tab.active { color: var(--text-main); font-weight: 500; }
+        .tab.active::after {
+            content:''; position: absolute; bottom:0; left:14px; right:14px; height:3px; background: var(--accent-color); border-radius: 3px 3px 0 0;
+        }
+
+        /* Content */
+        .content-area { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+        
+        .section-title { font-size: 13px; color: var(--text-sub); margin: 24px 0 10px 4px; font-weight: 500; }
+        .section-title:first-child { margin-top: 5px; }
+
+        /* Buttons & Forms - 精緻化調整 */
+        .btn-primary { 
+            display: block; width: 100%; 
+            padding: 8px 0; /* 細長感 */
+            text-align: center; border-radius: var(--radius-std); 
+            font-size: 14px; color: #fff; background-color: var(--accent-color); font-weight: 500; 
+            cursor: pointer; margin-top: 15px; 
+            box-shadow: 0 2px 5px rgba(165, 93, 87, 0.25); /* 柔和陰影 */
+            letter-spacing: 1.2px; /* 增加字距 */
+            transition: all 0.2s;
+        }
+        .btn-primary:active { transform: scale(0.98); background-color: var(--accent-hover); box-shadow: none; }
+        
+        .btn-sm { padding: 4px 12px; border-radius: var(--radius-btn); font-size: 12px; background: #fff; border: 1px solid var(--line-color); color: var(--text-sub); cursor: pointer; }
+        .btn-icon { padding: 4px 8px; font-size: 16px; color: #999; cursor: pointer; }
+
+        .form-group { margin-bottom: 14px; text-align: left; }
+        .form-label { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; display: block; }
+        .form-input, .form-select { 
+            width: 100%; padding: 10px; border: 1px solid var(--line-color); 
+            border-radius: var(--radius-std); background: var(--input-bg); 
+            color: var(--text-main); transition: border 0.2s;
+        }
+        .form-input:focus { border-color: var(--accent-color); }
+        .form-select:disabled { background: #f5f5f5; color: #999; border-color: #eee; }
+
+        .toggle-group { display: flex; gap: 8px; }
+        .toggle-btn { flex: 1; padding: 8px; border: 1px solid var(--line-color); border-radius: var(--radius-std); font-size: 13px; text-align: center; color: var(--text-sub); background: #fff; transition: all 0.2s; }
+        .toggle-btn.active { background: var(--text-main); color: #fff; border-color: var(--text-main); }
+        
+        /* Unified Item Styles */
+        .block-item, .check-item, .expense-row, .timeline-card {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px; margin-bottom: 10px;
+            background-color: var(--item-bg); 
+            border-radius: var(--radius-std); 
+            transition: background 0.1s;
+        }
+        .block-item:active, .check-item:active, .expense-row:active, .timeline-card:active { background-color: #E6E2DC; }
+        .block-item:last-child, .check-item:last-child, .expense-row:last-child { margin-bottom: 0; }
+        
+        .timeline-card { align-items: center; gap: 12px; flex-direction: row; }
+        .expense-row { align-items: center; gap: 12px; }
+
+        /* Check Item */
+        .check-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #ccc; margin-right: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .check-item.checked .check-circle { border-color: var(--accent-color); background: var(--accent-color); }
+        .check-item.checked .check-circle::after { content: '✓'; color: #fff; font-size: 12px; }
+
+        /* Details/Summary (Accordion) */
+        details { margin-bottom: 12px; background: transparent; }
+        summary { 
+            padding: 10px 4px; font-size: 14px; font-weight: 500; color: var(--text-sub); 
+            cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line-color);
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '+'; font-size: 16px; color: var(--text-sub); }
+        details[open] summary::after { content: '-'; }
+        .todo-content { padding-top: 10px; }
+        
+        /* Unified Tags */
+        .tag-pill { 
+            font-size: 11px; padding: 4px 8px; border-radius: 6px; color: #fff; 
+            white-space: nowrap; font-weight: 500; flex: 0 0 auto;
+            background-color: var(--tag-bg-dark); /* Default */
+        }
+        .tag-pill[data-tag="購物"] { background-color: var(--tag-bg-shopping); }
+        .tag-pill[data-tag="飲食"] { background-color: var(--tag-bg-food); }
+        .tag-pill[data-tag="景點"] { background-color: var(--tag-bg-spot); }
+        .tag-pill[data-tag="其他"] { background-color: var(--tag-bg-other); }
+        .tag-pill[data-type="Cash"] { background-color: var(--color-cash); }
+        .tag-pill[data-type="Credit"] { background-color: var(--color-credit); }
+        .tag-pill[data-type="IC"] { background-color: var(--color-ic); }
+        
+        .expense-badge { font-size: 10px; color: var(--accent-color); border: 1px solid var(--accent-color); padding: 1px 4px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+        
+        /* Debt / Split */
+        .debt-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; color: #fff; margin-right: 8px; font-weight: 500; }
+        .debt-tag.rec { background-color: var(--green-safe); }
+        .debt-tag.pay { background-color: var(--red-danger); }
+        .split-item { font-size: 14px; display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed #ddd; }
+
+        /* Progress Bars */
+        .progress-row { margin-bottom: 18px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
+        .progress-track { width: 100%; height: 6px; background: #E6E2DC; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; }
+        .progress-amounts { display: flex; justify-content: flex-end; gap: 12px; font-size: 12px; margin-top: 6px; font-family: monospace; }
+        .curr-twd { color: var(--text-main); font-weight: bold; }
+
+        /* Sub-Tabs */
+        .sub-tab-container { display: flex; gap: 10px; margin-bottom: 15px; padding: 2px; }
+        .sub-tab { flex: 1; text-align: center; padding: 8px; font-size: 14px; color: var(--text-sub); border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+        .sub-tab.active { color: var(--accent-color); border-bottom-color: var(--accent-color); font-weight: 500; }
+        
+        /* Filter Pills */
+        .filter-container { display: flex; gap: 8px; margin-bottom: 15px; padding: 0 4px; overflow-x: auto; scrollbar-width: none; }
+        .filter-container::-webkit-scrollbar { display: none; }
+        .filter-pill { 
+            padding: 4px 10px; border-radius: var(--radius-btn); font-size: 12px; color: var(--text-sub); 
+            background: #fff; border: 1px solid var(--line-color); cursor: pointer; white-space: nowrap; transition: all 0.2s;
+        }
+        .filter-pill.active { background: var(--text-main); color: #fff; border-color: var(--text-main); }
+
+        /* Vocab Grid & Cards */
+        .vocab-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+        .vocab-quick-card { 
+            background: #fff; padding: 10px 4px; margin: 0; min-height: 60px; 
+            border-radius: var(--radius-std); border: 1px solid var(--line-color);
+            display: flex; flex-direction: column; justify-content: center; text-align: center; 
+            cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .vocab-card { 
+            background: #fff; padding: 16px; margin-bottom: 10px; border-radius: var(--radius-std); 
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); text-align: center; cursor: pointer;
+            border: 1px solid var(--line-color);
+        }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 100; display: none; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { 
+            background: #fff; width: 85%; max-width: 320px; border-radius: 12px; 
+            padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            max-height: 90vh; overflow-y: auto; 
+        }
+        /* Modal 標題統一 18px */
+        .modal-box h3 { margin-top: 0; color: var(--text-main); text-align: center; font-size: 18px; font-weight: 500; letter-spacing: 1px; margin-bottom: 20px; }
+        
+        /* FAB */
+        .fab { 
+            position: fixed; bottom: calc(20px + var(--sab)); right: 20px; 
+            width: 52px; height: 52px; border-radius: 50%; 
+            background: var(--accent-color); color: #fff; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 24px; box-shadow: 0 4px 12px rgba(165, 93, 87, 0.4); z-index: 50; 
+            line-height: 1; padding-bottom: 2px;
+        }
+
+        /* Fullscreen Text Card */
+        .fullscreen-card {
+            width: 90vw; max-width: 400px;
+            background: #fff; border: 4px solid var(--accent-color); border-radius: 20px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <div class="dashboard-side">
+            <div class="date-display" id="headerDate">--</div>
+            <a id="headerWeatherLink" href="#" target="_blank" class="weather-link"></a>
+        </div>
+        <div class="nav-side">
+            <div class="nav-btn" onclick="App.ui.switchTab(0)" id="btn-settings">設定</div>
+            <div class="nav-btn" onclick="App.ui.switchTab(3)" id="btn-vocab">日語</div>
+            <div class="nav-btn" onclick="App.ui.switchTab(4)" id="btn-account">記帳</div>
+        </div>
+    </div>
+
+    <div class="tab-container" id="tabContainer"></div>
+    <div class="content-area" id="mainContent"></div>
+    <div class="fab" onclick="App.ui.openModal('modalCalculator')">⇄</div>
+
+    <!-- 匯率計算機 -->
+    <div id="modalCalculator" class="modal-overlay" onclick="if(event.target===this) App.ui.closeModal('modalCalculator')">
+        <div class="modal-box">
+            <h3>匯率換算</h3>
+            <div class="form-group"><label class="form-label" id="calcLocalLabel">當地幣別</label><input type="number" id="calcJPY" class="form-input" placeholder="輸入金額" inputmode="decimal"></div>
+            <div class="form-group"><label class="form-label">TWD (約)</label><input type="number" id="calcTWD" class="form-input" readonly></div>
+            <a id="btnGoogleRate" href="#" target="_blank" class="btn-primary">GOOGLE 即時匯率</a>
+        </div>
+    </div>
+
+    <!-- 記帳 Modal -->
+    <div id="modalExpense" class="modal-overlay">
+        <div class="modal-box">
+            <h3>記一筆</h3>
+            <input type="hidden" id="expenseLinkEvtIdx">
+            <div class="form-group"><label class="form-label">日期</label><select id="expenseDayInput" class="form-select"></select></div>
+            <div class="form-group" style="display:flex; gap:10px;">
+                <div style="flex:1;"><label class="form-label">金額</label><input type="number" id="expenseAmountInput" class="form-input" placeholder="0" inputmode="decimal"></div>
+                <div style="flex:0 0 90px;"><label class="form-label">幣別</label>
+                    <div class="toggle-group" id="currencyGroup">
+                        <div class="toggle-btn active" data-val="Local" onclick="App.ui.toggle(this)"><span id="currLocalSym">JPY</span></div>
+                        <div class="toggle-btn" data-val="TWD" onclick="App.ui.toggle(this)">TWD</div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">名稱</label><input type="text" id="expenseDescInput" class="form-input" placeholder="例如：晚餐"></div>
+            <div class="form-group"><label class="form-label">付款人</label><select id="expensePayerInput" class="form-select"></select></div>
+            <div class="form-group"><label class="form-label">分攤對象 (不選預設為自己)</label><div id="expenseSplitGroup" style="display:flex; flex-wrap:wrap; gap:5px;"></div></div>
+            
+            <div class="form-group"><label class="form-label">方式</label>
+                <div class="toggle-group" id="methodGroup">
+                    <div class="toggle-btn active" data-val="Cash" onclick="App.ui.toggle(this); App.ui.toggleIc(false)">現金</div>
+                    <div class="toggle-btn" data-val="Credit" onclick="App.ui.toggle(this); App.ui.toggleIc(false)">刷卡</div>
+                    <div class="toggle-btn" data-val="IC" onclick="App.ui.toggle(this); App.ui.toggleIc(true)">IC卡</div>
+                </div>
+            </div>
+            <div class="form-group" id="icTypeSection" style="display:none; margin-top:10px; border-top:1px dashed #eee; padding-top:10px;">
+                <label class="form-label">IC卡操作</label>
+                <div class="toggle-group" id="icTypeGroup" style="margin-bottom:10px;">
+                    <div class="toggle-btn active" data-val="Spend" onclick="App.ui.toggle(this); document.getElementById('icSourceSection').style.display='none';">消費</div>
+                    <div class="toggle-btn" data-val="Charge" onclick="App.ui.toggle(this); document.getElementById('icSourceSection').style.display='block';">加值</div>
+                </div>
+                <div id="icSourceSection" style="display:none;">
+                    <label class="form-label">加值資金來源</label>
+                    <div class="toggle-group" id="icSourceGroup">
+                        <div class="toggle-btn active" data-val="Cash" onclick="App.ui.toggle(this)">現金</div>
+                        <div class="toggle-btn" data-val="Credit" onclick="App.ui.toggle(this)">刷卡</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalExpense')">取消</button>
+                <button class="btn-primary" style="margin-top:0;" onclick="App.handlers.saveExpense()">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 行程編輯 Modal -->
+    <div id="modalEvent" class="modal-overlay">
+        <div class="modal-box">
+            <h3>行程編輯</h3>
+            <input type="hidden" id="editEventDayIdx"><input type="hidden" id="editEventIdx">
+            <div class="form-group"><label class="form-label">行程名稱</label><input type="text" id="eventTitle" class="form-input"></div>
+            <div class="form-group"><label class="form-label">分類</label>
+                <div class="toggle-group" id="eventTagGroup">
+                    <div class="toggle-btn active" onclick="App.ui.toggle(this)" data-val="景點">景點</div>
+                    <div class="toggle-btn" onclick="App.ui.toggle(this)" data-val="購物">購物</div>
+                    <div class="toggle-btn" onclick="App.ui.toggle(this)" data-val="飲食">飲食</div>
+                </div>
+            </div>
+            <div class="form-group"><label class="form-label">備註</label><textarea id="eventNote" class="form-input" style="height:80px;"></textarea></div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-primary" style="background:#fdd; color:#c00; margin-top:0;" onclick="App.handlers.deleteEvent()">刪除</button>
+                <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalEvent')">取消</button>
+                <button class="btn-primary" style="margin-top:0;" onclick="App.handlers.saveEvent()">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用輸入 Modal (待辦/行前) -->
+    <div id="modalCommonInput" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="commonModalTitle">新增</h3>
+            <input type="hidden" id="commonInputType"> 
+            <div class="form-group"><label class="form-label">名稱</label><input type="text" id="commonInputText" class="form-input"></div>
+            <div class="form-group" id="commonTagSection" style="display:none;"><label class="form-label">分類</label>
+                <select id="commonInputTag" class="form-select"><option value="購物">購物</option><option value="飲食">飲食</option><option value="景點">景點</option><option value="其他">其他</option></select>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalCommonInput')">取消</button>
+                <button class="btn-primary" style="margin-top:0;" onclick="App.handlers.saveCommonInput()">新增</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯待辦 Modal -->
+    <div id="modalEditTodo" class="modal-overlay">
+        <div class="modal-box">
+            <h3>編輯待辦</h3>
+            <input type="hidden" id="editTodoIdx">
+            <div class="form-group"><label class="form-label">名稱</label><input type="text" id="editTodoText" class="form-input"></div>
+            <div class="form-group"><label class="form-label">分類</label>
+                <select id="editTodoTag" class="form-select"><option value="購物">購物</option><option value="飲食">飲食</option><option value="景點">景點</option><option value="其他">其他</option></select>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalEditTodo')">取消</button>
+                <button class="btn-primary" style="margin-top:0;" onclick="App.handlers.saveEditTodo()">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待辦完成 Modal -->
+    <div id="modalComplete" class="modal-overlay">
+        <div class="modal-box">
+            <h3>待辦完成</h3>
+            <input type="hidden" id="completeTodoIdx">
+            <div class="form-group"><label class="form-label">歸檔日期</label><select id="completeTargetDay" class="form-select"></select></div>
+            <div class="form-group"><label class="form-label">備註</label><input type="text" id="completeNote" class="form-input"></div>
+            <div style="margin-top:20px;">
+                <button class="btn-primary" onclick="App.handlers.confirmComplete(true)">歸檔並記帳</button>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalComplete')">取消</button>
+                    <button class="btn-primary" style="background:var(--accent-hover); margin-top:0;" onclick="App.handlers.confirmComplete(false)">僅歸檔</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 匯出文字 Modal -->
+    <div id="modalText" class="modal-overlay" onclick="if(event.target===this) App.ui.closeModal('modalText')">
+        <div class="modal-box">
+            <h3 id="modalTextTitle">資料</h3>
+            <textarea id="modalTextArea" style="width:100%; height:200px; border:1px solid #ddd; border-radius:6px; font-size:13px; padding:10px; background:#FAFAFA;" readonly></textarea>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalText')">關閉</button>
+                <button class="btn-primary" style="margin-top:0;" onclick="App.handlers.copyText()">複製</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 單字卡放大 -->
+    <div id="modalVocab" class="modal-overlay" onclick="App.ui.closeModal('modalVocab')">
+        <div class="fullscreen-card">
+            <div id="vocabJP" style="font-size:32px; font-weight:bold; color:#000; margin-bottom:20px; line-height:1.4;"></div>
+            <div id="vocabZH" style="font-size:16px; color:#666;"></div>
+            <div style="margin-top:30px; font-size:12px; color:#ccc;">(點擊關閉)</div>
+        </div>
+    </div>
+
+    <script>
+        const App = {
+            version: 'v01.13', // Code optimized & refined
+            state: {
+                tripData: [], preTripList: [], todoList: [],
+                settings: { baseRate: 0.215, currencyName: 'JPY', destination: '東京', members: ['我'], me: '我' },
+                currentTab: 0,
+                dailySubTab: 'event',
+                dailyFilter: 'All', 
+                dailyExpenseFilter: 'All' 
+            },
+            
+            data: {
+                init() {
+                    const s = localStorage.getItem('luhing_v33');
+                    if(s) { App.state = JSON.parse(s); } 
+                    else {
+                        const old = localStorage.getItem('luhing_v32') || localStorage.getItem('luhing_v31');
+                        if(old) App.state = JSON.parse(old);
+                    }
+                    if(!App.state.preTripList) App.state.preTripList=[];
+                    if(!App.state.settings.currencyName) App.state.settings.currencyName='JPY';
+                    if(!App.state.dailyFilter) App.state.dailyFilter = 'All';
+                    if(!App.state.dailyExpenseFilter) App.state.dailyExpenseFilter = 'All'; 
+                    
+                    const today = App.utils.getLocalDateStr();
+                    let matchDayIdx = -1;
+                    if(App.state.tripData.length > 0) {
+                        App.state.tripData.forEach((d,i) => { if(d.dateStr === today) matchDayIdx = i; });
+                    }
+                    if(App.state.currentTab === 0 && matchDayIdx > -1) App.state.currentTab = matchDayIdx + 5;
+                    else if(App.state.currentTab === 0 && App.state.tripData.length > 0) App.state.currentTab = 5;
+                },
+                save() { localStorage.setItem('luhing_v33', JSON.stringify(App.state)); },
+                reset() {
+                    if(confirm("警告：重置將刪除所有資料！")) { localStorage.clear(); location.reload(); }
+                }
+            },
+
+            ui: {
+                init() {
+                    App.utils.updateDate();
+                    App.ui.renderHeader();
+                    App.ui.renderTabs();
+                    App.ui.switchTab(App.state.currentTab);
+                    
+                    document.getElementById('calcJPY').oninput = (e) => {
+                        const v = parseFloat(e.target.value); 
+                        if(v) document.getElementById('calcTWD').value = Math.ceil(v * App.state.settings.baseRate);
+                        else document.getElementById('calcTWD').value = "";
+                    };
+                },
+                
+                renderHeader() {
+                    const dest = App.state.settings.destination || '東京';
+                    document.getElementById('headerWeatherLink').innerText = `${dest}`;
+                    document.getElementById('headerWeatherLink').href = `https://www.google.com/search?q=${dest}+天氣`;
+                    
+                    const curr = App.state.settings.currencyName || 'JPY';
+                    document.getElementById('calcLocalLabel').innerText = curr;
+                    document.getElementById('calcJPY').placeholder = `${curr} 金額`;
+                    document.getElementById('currLocalSym').innerText = curr;
+                    document.getElementById('btnGoogleRate').href = `https://www.google.com/finance/quote/${curr}-TWD`;
+
+                    ['btn-settings','btn-vocab','btn-account'].forEach(id => document.getElementById(id).classList.remove('active'));
+                    if(App.state.currentTab === 0) document.getElementById('btn-settings').classList.add('active');
+                    if(App.state.currentTab === 3) document.getElementById('btn-vocab').classList.add('active');
+                    if(App.state.currentTab === 4) document.getElementById('btn-account').classList.add('active');
+                },
+
+                renderTabs() {
+                    const t = document.getElementById('tabContainer');
+                    let tabsHTML = '';
+                    tabsHTML += `<div class="tab ${App.state.currentTab===1?'active':''}" onclick="App.ui.switchTab(1)">行前</div>`;
+                    tabsHTML += `<div class="tab ${App.state.currentTab===2?'active':''}" onclick="App.ui.switchTab(2)">待辦</div>`;
+                    App.state.tripData.forEach((d, i) => {
+                        tabsHTML += `<div class="tab ${App.state.currentTab===(i+5)?'active':''}" onclick="App.ui.switchTab(${i+5})">${d.dateStr.slice(5)}</div>`;
+                    });
+                    t.innerHTML = tabsHTML;
+                },
+
+                switchTab(idx) {
+                    App.state.currentTab = idx;
+                    App.ui.renderHeader();
+                    App.ui.renderTabs();
+                    const c = document.getElementById('mainContent');
+                    c.scrollTop = 0; c.innerHTML = '';
+                    
+                    if(idx === 0) App.ui.renderSettings(c);
+                    else if(idx === 1) App.ui.renderPreTrip(c);
+                    else if(idx === 2) App.ui.renderTodo(c);
+                    else if(idx === 3) App.ui.renderVocab(c);
+                    else if(idx === 4) App.ui.renderOverview(c);
+                    else App.ui.renderDaily(c, idx - 5);
+                },
+
+                renderSettings(c) {
+                    const s = App.state.settings;
+                    const d0 = App.state.tripData[0] ? App.state.tripData[0].dateStr : '';
+                    const meOptions = s.members.map(m => `<option value="${m}" ${m===s.me?'selected':''}>${m}</option>`).join('');
+                    
+                    c.innerHTML = `
+                        <div class="section-title">基本設定</div>
+                        <div class="form-group"><label class="form-label">地點</label><input id="setDest" value="${s.destination}" class="form-input"></div>
+                        <div class="form-group"><label class="form-label">開始日期 (YYYY-MM-DD)</label><input id="setDate" type="date" value="${d0}" class="form-input"></div>
+                        <div class="form-group"><label class="form-label">天數</label><input id="setDays" type="number" value="${App.state.tripData.length||5}" class="form-input"></div>
+                        
+                        <div class="section-title">匯率與成員</div>
+                        <div class="form-group"><label class="form-label">當地幣別代號</label><input id="setCurrName" value="${s.currencyName}" class="form-input"></div>
+                        <div class="form-group"><label class="form-label">預設匯率</label><input id="setRate" type="number" step="0.001" value="${s.baseRate}" class="form-input"></div>
+                        <div class="form-group"><label class="form-label">成員名單 (用,分隔)</label><input id="setMembers" value="${s.members.join('，')}" class="form-input"></div>
+                        <div class="form-group"><label class="form-label">我是誰</label><select id="setMe" class="form-select">${meOptions}</select></div>
+                        <button class="btn-primary" onclick="App.handlers.saveSettings()">儲存設定</button>
+                        
+                        <div style="height:1px; background:#e0e0e0; margin:20px 0;"></div>
+                        <button class="btn-primary" style="background:#fff; color:var(--text-sub); border:1px solid #ccc; box-shadow:none;" onclick="App.handlers.exportData()">匯出報表</button>
+                        <button class="btn-primary" style="background:transparent; color:#ccc; box-shadow:none; margin-top:10px;" onclick="App.data.reset()">全部重置</button>
+                        <!-- 顯示版本編號 -->
+                        <div style="text-align:center; color:#ccc; font-size:12px; margin-top:20px;">lú-hîng ${App.version}</div>
+                    `;
+                },
+
+                renderPreTrip(c) {
+                    let h = `<button class="btn-primary" style="margin-bottom:15px;" onclick="App.ui.openCommonInput('pretrip')">＋ 新增行前項目</button>`;
+                    if(App.state.preTripList.length > 0) {
+                        App.state.preTripList.forEach((item, idx) => {
+                            h += `<div class="check-item ${item.done?'checked':''}" onclick="App.handlers.togglePreTrip(${idx})"><div class="check-circle"></div><div style="flex:1; ${item.done?'color:#ccc; text-decoration:line-through;':''}">${item.title}</div><div style="padding:10px; color:#ddd;" onclick="event.stopPropagation(); App.handlers.delPreTrip(${idx})">✕</div></div>`;
+                        });
+                    } else {
+                        h += `<div style="text-align:center; color:#ccc; margin-top:30px;">尚無項目</div>`;
+                    }
+                    c.innerHTML = h;
+                },
+
+                renderTodo(c) {
+                    const tags = ["購物", "飲食", "景點", "其他"];
+                    let h = `<button class="btn-primary" style="margin-bottom:15px;" onclick="App.ui.openCommonInput('todo')">＋ 新增待辦項目</button>`;
+                    tags.forEach(tag => {
+                        const items = App.state.todoList.filter(x => x.tag === tag);
+                        h += `<details>
+                            <summary>${tag} (${items.length})</summary>
+                            <div class="todo-content">`;
+                        if(items.length===0) h+= `<div style="padding:10px; color:#ccc; font-size:13px; text-align:center;">無項目</div>`;
+                        items.forEach((item) => {
+                            const idx = App.state.todoList.indexOf(item);
+                            h += `<div class="block-item">
+                                <div style="flex:1;">${item.title}</div>
+                                <div style="display:flex; gap:5px;">
+                                    <div class="btn-icon" onclick="App.ui.openEditTodo(${idx})">✎</div>
+                                    <div class="btn-icon" onclick="App.handlers.delTodo(${idx})">✕</div>
+                                    <div class="btn-sm" onclick="App.ui.openCompleteModal(${idx})">完成</div>
+                                </div>
+                            </div>`;
+                        });
+                        h += `</div></details>`;
+                    });
+                    c.innerHTML = h;
+                },
+
+                renderVocab(c) {
+                    const counters = [
+                        {z:"一個", j:"ひとつ"}, {z:"二個", j:"ふたつ"}, {z:"三個", j:"みっつ"}, {z:"四個", j:"よっつ"},
+                        {z:"一位", j:"ひとり"}, {z:"二位", j:"ふたり"}, {z:"三位", j:"さんにん"}, {z:"四位", j:"よにん"}
+                    ];
+                    let h = `<div class="vocab-grid">`;
+                    counters.forEach(w => {
+                        h += `<div class="vocab-quick-card" onclick="App.ui.openVocab('${w.z}','${w.j}')">
+                                <div style="font-size:14px; font-weight:bold; color:var(--text-main);">${w.j}</div>
+                                <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">${w.z}</div>
+                              </div>`;
+                    });
+                    h += `</div>`;
+
+                    const cats = [
+                        {t:"購物", i:[{z:"請問總共多少錢", j:"全部でいくらですか"},{z:"請問營業時間到幾點", j:"何時まで営業していますか"},{z:"請問有賣100元的郵票嗎", j:"100円の切手は売っていますか"},{z:"請幫我辦理退稅", j:"免税手続きをお願いします"},{z:"可以看看這項商品嗎", j:"これ、ちょっと見せてもらえますか"}]},
+                        {t:"服務", i:[{z:"請問可以先寄放行李嗎", j:"荷物を預かってもらえますか"},{z:"請問這裡可以拍照嗎", j:"ここは、写真をとってもいいですか"},{z:"請問洗手間在哪裡呢", j:"トイレはどちらでしょうか"},{z:"請幫我辦理入住", j:"チェックインをお願いします"}]}
+                    ];
+                    cats.forEach(cat => {
+                        h += `<div class="section-title">${cat.t}</div>`;
+                        cat.i.forEach(w => {
+                            h += `<div class="vocab-card" onclick="App.ui.openVocab('${w.z}','${w.j}')"><div style="font-size:16px; font-weight:bold; color:var(--text-main);">${w.j}</div><div style="font-size:12px; color:var(--text-sub); margin-top:4px;">${w.z}</div></div>`;
+                        });
+                    });
+                    h += `<a href="https://translate.google.com/?sl=zh-TW&tl=ja" target="_blank" class="btn-primary">GOOGLE 翻譯</a>`;
+                    c.innerHTML = h;
+                },
+
+                renderOverview(c) {
+                    const stats = App.utils.calcStats();
+                    const fmt = App.utils.fmt;
+                    const curr = App.state.settings.currencyName || 'JPY';
+                    const getW = (v) => Math.min((v/300), 100); 
+
+                    c.innerHTML = `
+                        <button class="btn-primary" style="margin-top:0; margin-bottom:20px;" onclick="App.ui.openExpenseModal()">＋ 新增消費紀錄</button>
+                        
+                        <div class="section-title">消費分佈 (1% = 300 TWD)</div>
+                        <div style="background:#fff; padding:15px; border-radius:var(--radius-std); border:1px solid var(--line-color); margin-bottom:20px;">
+                            <div class="progress-row"><div class="progress-header"><span>現金</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.cash.TWD)}%; background:var(--color-cash);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.cash.TWD)}</span> + ${curr} ${fmt(stats.cash.Local)}</div></div>
+                            <div class="progress-row"><div class="progress-header"><span>刷卡</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.credit.TWD)}%; background:var(--color-credit);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.credit.TWD)}</span> + ${curr} ${fmt(stats.credit.Local)}</div></div>
+                            <div class="progress-row"><div class="progress-header"><span>IC卡</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.ic.TWD)}%; background:var(--color-ic);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.ic.TWD)}</span> + ${curr} ${fmt(stats.ic.Local)}</div></div>
+                        </div>
+
+                        <div class="section-title">分帳狀態 (TWD)</div>
+                        <div id="debtList" style="background:#fff; padding:10px 15px; border-radius:var(--radius-std); border:1px solid var(--line-color); margin-bottom:20px;"></div>
+                        
+                        <div class="section-title">分帳狀態 (${curr})</div>
+                        <div id="debtListLocal" style="background:#fff; padding:10px 15px; border-radius:var(--radius-std); border:1px solid var(--line-color);"></div>
+                    `;
+                    
+                    const debt = App.utils.calcDebtData();
+                    const renderDebt = (list, targetId) => {
+                        let h = '';
+                        list.forEach(d => {
+                            let cls = d.type === 'rec' ? 'debt-tag rec' : 'debt-tag pay';
+                            let label = d.type === 'rec' ? '應收' : '應付';
+                            h += `<div class="split-item">
+                                <div><span class="${cls}">${label}</span> <span>${d.target}</span></div>
+                                <div style="font-weight:bold;">${fmt(d.val)}</div>
+                            </div>`;
+                        });
+                        if(list.length===0) h = '<div style="color:#ccc; font-size:12px; text-align:center;">無</div>';
+                        document.getElementById(targetId).innerHTML = h;
+                    };
+                    renderDebt(debt.twd, 'debtList');
+                    renderDebt(debt.local, 'debtListLocal');
+                },
+
+                renderDaily(c, dIdx) {
+                    const day = App.state.tripData[dIdx];
+                    if(!day) return;
+                    if(!day.events) day.events = [];
+                    
+                    const subTab = App.state.dailySubTab;
+                    const filter = App.state.dailyFilter || 'All';
+                    const expenseFilter = App.state.dailyExpenseFilter || 'All';
+
+                    let h = `
+                    <div class="sub-tab-container">
+                        <div class="sub-tab ${subTab==='event'?'active':''}" onclick="App.ui.setDailySubTab('event', ${dIdx})">事件</div>
+                        <div class="sub-tab ${subTab==='expense'?'active':''}" onclick="App.ui.setDailySubTab('expense', ${dIdx})">消費</div>
+                    </div>`;
+
+                    if(subTab === 'event') {
+                        // 事件篩選
+                        const filters = ['All', '景點', '購物', '飲食', '其他'];
+                        h += `<div class="filter-container">`;
+                        filters.forEach(f => {
+                            const label = f === 'All' ? '全部' : f;
+                            h += `<div class="filter-pill ${filter===f?'active':''}" onclick="App.ui.setDailyFilter('${f}', ${dIdx})">${label}</div>`;
+                        });
+                        h += `</div>`;
+
+                        const displayEvents = filter === 'All' ? day.events : day.events.filter(e => e.tag === filter);
+
+                        if(displayEvents.length === 0) h += `<div style="text-align:center; color:#ccc; padding:20px;">無此類行程</div>`;
+                        displayEvents.forEach((evt) => {
+                            const originalIdx = day.events.indexOf(evt);
+                            h += `<div class="timeline-card" onclick="App.handlers.editEvent(${dIdx}, ${originalIdx})">
+                                <span class="tag-pill" data-tag="${evt.tag}">${evt.tag}</span>
+                                <div style="flex:1;">
+                                    <div style="font-weight:500; margin-bottom:4px;">${evt.title}${evt.hasExpense ? `<span class="expense-badge">💸 已記帳</span>` : ''}</div>
+                                    ${evt.note ? `<div style="font-size:13px; color:#888;">${evt.note}</div>` : ''}
+                                </div></div>`;
+                        });
+                    } else {
+                        // 消費篩選 UI
+                        const filters = ['All', 'Cash', 'Credit', 'IC'];
+                        const labels = { 'All':'全部', 'Cash':'現金', 'Credit':'刷卡', 'IC':'IC卡' };
+                        
+                        h += `<div class="filter-container">`;
+                        filters.forEach(f => {
+                            h += `<div class="filter-pill ${expenseFilter===f?'active':''}" onclick="App.ui.setDailyExpenseFilter('${f}', ${dIdx})">${labels[f]}</div>`;
+                        });
+                        h += `</div>`;
+
+                        let displayExpenses = day.expenses;
+                        if(expenseFilter !== 'All') {
+                            displayExpenses = day.expenses.filter(e => e.method === expenseFilter);
+                        }
+
+                        if(displayExpenses.length === 0) h += `<div style="text-align:center; color:#ccc; padding:20px;">無此類消費</div>`;
+                        else {
+                            displayExpenses.forEach((e) => {
+                                const originalIdx = day.expenses.indexOf(e);
+                                let methodLabel = 'IC卡', typeKey = 'IC'; 
+                                if(e.method==='Cash') { methodLabel='現金'; typeKey='Cash'; }
+                                if(e.method==='Credit') { methodLabel='刷卡'; typeKey='Credit'; }
+                                let displayDesc = e.desc;
+                                if(e.method === 'IC' && e.icType) {
+                                    methodLabel = e.icType === 'Charge' ? 'IC加值' : 'IC消費';
+                                    if(e.icType === 'Charge' && e.icSource) displayDesc += ` (${e.icSource==='Cash'?'現金':'刷卡'})`;
+                                }
+                                h += `<div class="expense-row" onclick="if(confirm('刪除？')) App.handlers.delExpense(${dIdx}, ${originalIdx})">
+                                    <span class="tag-pill" data-type="${typeKey}">${methodLabel}</span>
+                                    <div style="flex:1;">
+                                        <div style="font-size:14px; margin-bottom:2px;">${displayDesc} <span style="font-size:12px; color:#999;">(${e.payer})</span></div>
+                                    </div>
+                                    <div style="font-weight:bold; font-family:monospace;">${e.curr==='TWD'?'TWD':(App.state.settings.currencyName||'JPY')} ${App.utils.fmt(e.amt)}</div>
+                                </div>`;
+                            });
+                        }
+                    }
+                    c.innerHTML = h;
+                },
+
+                openModal(id) { document.getElementById(id).classList.add('active'); },
+                closeModal(id) { document.getElementById(id).classList.remove('active'); },
+                toggle(btn) { btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); },
+                toggleIc(show) { document.getElementById('icTypeSection').style.display = show ? 'block' : 'none'; },
+                openVocab(z, j) { document.getElementById('vocabJP').innerText = j; document.getElementById('vocabZH').innerText = z; App.ui.openModal('modalVocab'); },
+                
+                setDailySubTab(tab, dIdx) { App.state.dailySubTab = tab; App.ui.renderDaily(document.getElementById('mainContent'), dIdx); },
+                setDailyFilter(f, dIdx) { App.state.dailyFilter = f; App.ui.renderDaily(document.getElementById('mainContent'), dIdx); },
+                setDailyExpenseFilter(f, dIdx) { App.state.dailyExpenseFilter = f; App.ui.renderDaily(document.getElementById('mainContent'), dIdx); }, 
+
+                openCommonInput(type) {
+                    document.getElementById('commonInputType').value = type;
+                    document.getElementById('commonInputText').value = '';
+                    document.getElementById('commonModalTitle').innerText = type==='todo' ? '新增待辦' : '新增行前項目';
+                    document.getElementById('commonTagSection').style.display = type==='todo' ? 'block' : 'none';
+                    App.ui.openModal('modalCommonInput');
+                },
+
+                openExpenseModal(presetDesc='', presetDay=null, linkEvtIdx=null, lockDate=false) {
+                    const ds = document.getElementById('expenseDayInput');
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    let defaultIdx = 0;
+                    ds.innerHTML = App.state.tripData.map((d,i)=> {
+                        if(d.dateStr === todayStr) defaultIdx = i;
+                        return `<option value="${i}">${d.dateStr}</option>`;
+                    }).join('');
+                    
+                    if(presetDay !== null) ds.value = presetDay;
+                    else if(App.state.currentTab >= 5) ds.value = App.state.currentTab - 5;
+                    else ds.value = defaultIdx;
+                    
+                    ds.disabled = lockDate;
+
+                    const ps = document.getElementById('expensePayerInput');
+                    ps.innerHTML = App.state.settings.members.map(m=>`<option value="${m}" ${m===App.state.settings.me?'selected':''}>${m}</option>`).join('');
+                    
+                    const sg = document.getElementById('expenseSplitGroup');
+                    // 預設全選
+                    sg.innerHTML = App.state.settings.members.map(m => `<div class="toggle-btn active" style="font-size:12px; padding:6px 10px; flex:0 0 auto;" onclick="this.classList.toggle('active')" data-val="${m}">${m}</div>`).join('');
+
+                    document.getElementById('expenseAmountInput').value = '';
+                    document.getElementById('expenseDescInput').value = presetDesc;
+                    document.getElementById('expenseLinkEvtIdx').value = linkEvtIdx !== null ? linkEvtIdx : '';
+                    
+                    document.querySelectorAll('#methodGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector('#methodGroup .toggle-btn[data-val="Cash"]').classList.add('active');
+                    App.ui.toggleIc(false);
+                    document.getElementById('currLocalSym').innerText = App.state.settings.currencyName || 'JPY';
+                    App.ui.openModal('modalExpense');
+                },
+
+                openCompleteModal(idx) {
+                    document.getElementById('completeTodoIdx').value = idx;
+                    document.getElementById('completeNote').value = '';
+                    const ts = document.getElementById('completeTargetDay');
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    let defaultIdx = 0;
+                    ts.innerHTML = App.state.tripData.map((d,i)=> {
+                        if(d.dateStr === todayStr) defaultIdx = i;
+                        return `<option value="${i}">${d.dateStr}</option>`;
+                    }).join('');
+                    ts.value = defaultIdx;
+                    App.ui.openModal('modalComplete');
+                },
+                openEditTodo(idx) {
+                    const item = App.state.todoList[idx];
+                    document.getElementById('editTodoIdx').value = idx;
+                    document.getElementById('editTodoText').value = item.title;
+                    document.getElementById('editTodoTag').value = item.tag;
+                    App.ui.openModal('modalEditTodo');
+                }
+            },
+
+            handlers: {
+                saveSettings() {
+                    try {
+                        const s = App.state.settings;
+                        s.destination = document.getElementById('setDest').value;
+                        s.currencyName = document.getElementById('setCurrName').value || 'JPY';
+                        s.baseRate = parseFloat(document.getElementById('setRate').value) || 1;
+                        
+                        const memStr = document.getElementById('setMembers').value;
+                        if(memStr) s.members = memStr.split(/[,，]/).map(x=>x.trim()).filter(x=>x);
+                        const meSelect = document.getElementById('setMe');
+                        if(meSelect && meSelect.value) s.me = meSelect.value;
+                        
+                        const days = parseInt(document.getElementById('setDays').value);
+                        const dInput = document.getElementById('setDate').value; 
+                        let startDate = new Date(); 
+                        if(dInput) {
+                            const ymd = dInput.split('-');
+                            startDate = new Date(ymd[0], ymd[1]-1, ymd[2]);
+                        }
+
+                        const newArr = [];
+                        for(let i=0; i<days; i++) {
+                            const d = new Date(startDate); d.setDate(startDate.getDate() + i);
+                            const dateStr = App.utils.getLocalDateStr(d);
+                            const old = App.state.tripData[i] || { events:[], expenses:[] };
+                            newArr.push({ dateStr: dateStr, events:old.events||[], expenses:old.expenses||[] });
+                        }
+                        App.state.tripData = newArr; App.data.save(); alert('設定已儲存'); location.reload();
+                    } catch(e) { alert("儲存失敗"); }
+                },
+
+                saveCommonInput() {
+                    const type = document.getElementById('commonInputType').value;
+                    const t = document.getElementById('commonInputText').value;
+                    if(t) {
+                        if(type === 'todo') {
+                            const tag = document.getElementById('commonInputTag').value;
+                            App.state.todoList.push({title:t, tag:tag});
+                            App.ui.switchTab(2);
+                        } else {
+                            App.state.preTripList.push({title:t, done:false});
+                            App.ui.switchTab(1);
+                        }
+                        App.data.save(); App.ui.closeModal('modalCommonInput');
+                    }
+                },
+                togglePreTrip(idx) { App.state.preTripList[idx].done = !App.state.preTripList[idx].done; App.data.save(); App.ui.switchTab(1); },
+                delPreTrip(idx) { App.state.preTripList.splice(idx,1); App.data.save(); App.ui.switchTab(1); },
+                
+                saveEditTodo() {
+                    const idx = document.getElementById('editTodoIdx').value;
+                    const t = document.getElementById('editTodoText').value;
+                    const tag = document.getElementById('editTodoTag').value;
+                    if(t) { App.state.todoList[idx] = {title:t, tag:tag}; App.data.save(); App.ui.closeModal('modalEditTodo'); App.ui.switchTab(2); }
+                },
+                delTodo(idx) { if(confirm("刪除？")) { App.state.todoList.splice(idx,1); App.data.save(); App.ui.switchTab(2); } },
+
+                confirmComplete(withExpense) {
+                    const idx = document.getElementById('completeTodoIdx').value;
+                    const dIdx = document.getElementById('completeTargetDay').value;
+                    const note = document.getElementById('completeNote').value;
+                    const item = App.state.todoList[idx];
+                    
+                    if(!App.state.tripData[dIdx].events) App.state.tripData[dIdx].events = [];
+                    App.state.tripData[dIdx].events.push({ title: item.title, tag: item.tag, note: note, hasExpense: false });
+                    
+                    App.state.todoList.splice(idx, 1);
+                    App.data.save(); App.ui.closeModal('modalComplete');
+                    
+                    if(withExpense) {
+                        const newEvtIdx = App.state.tripData[dIdx].events.length - 1;
+                        App.ui.openExpenseModal(item.title, dIdx, newEvtIdx, true);
+                    } else {
+                        App.ui.switchTab(2);
+                    }
+                },
+
+                editEvent(dIdx, eIdx) {
+                    const evt = App.state.tripData[dIdx].events[eIdx];
+                    document.getElementById('editEventDayIdx').value = dIdx;
+                    document.getElementById('editEventIdx').value = eIdx;
+                    document.getElementById('eventTitle').value = evt.title;
+                    document.getElementById('eventNote').value = evt.note;
+                    document.querySelectorAll('#eventTagGroup .toggle-btn').forEach(b => b.classList.remove('active'));
+                    const tagBtn = document.querySelector(`#eventTagGroup .toggle-btn[data-val="${evt.tag}"]`);
+                    if(tagBtn) tagBtn.classList.add('active');
+                    App.ui.openModal('modalEvent');
+                },
+                saveEvent() {
+                    const dIdx = document.getElementById('editEventDayIdx').value;
+                    const eIdx = parseInt(document.getElementById('editEventIdx').value);
+                    const title = document.getElementById('eventTitle').value;
+                    const note = document.getElementById('eventNote').value;
+                    const tag = document.querySelector('#eventTagGroup .active').dataset.val;
+                    if(App.state.tripData[dIdx].events[eIdx]) {
+                        App.state.tripData[dIdx].events[eIdx].title = title;
+                        App.state.tripData[dIdx].events[eIdx].tag = tag;
+                        App.state.tripData[dIdx].events[eIdx].note = note;
+                        App.data.save();
+                    }
+                    App.ui.closeModal('modalEvent'); App.ui.switchTab(parseInt(dIdx)+5);
+                },
+                deleteEvent() {
+                    const dIdx = document.getElementById('editEventDayIdx').value;
+                    const eIdx = parseInt(document.getElementById('editEventIdx').value);
+                    if(confirm('刪除此行程？(將同步刪除已關聯的記帳)')) {
+                        const dayData = App.state.tripData[dIdx];
+                        if(dayData.expenses) {
+                            dayData.expenses = dayData.expenses.filter(exp => exp.linkEvtIdx != eIdx);
+                            dayData.expenses.forEach(exp => { if(exp.linkEvtIdx > eIdx) exp.linkEvtIdx--; });
+                        }
+                        dayData.events.splice(eIdx, 1);
+                        App.data.save(); App.ui.closeModal('modalEvent'); App.ui.switchTab(parseInt(dIdx)+5);
+                    }
+                },
+
+                saveExpense() {
+                    const dIdx = parseInt(document.getElementById('expenseDayInput').value);
+                    const amt = parseFloat(document.getElementById('expenseAmountInput').value);
+                    const desc = document.getElementById('expenseDescInput').value;
+                    const payer = document.getElementById('expensePayerInput').value;
+                    const currEl = document.querySelector('#currencyGroup .active');
+                    const curr = currEl.dataset.val === 'Local' ? (App.state.settings.currencyName || 'JPY') : 'TWD';
+                    const method = document.querySelector('#methodGroup .active').dataset.val;
+                    const linkEvtIdx = document.getElementById('expenseLinkEvtIdx').value;
+                    
+                    let icType = null; let icSource = null;
+                    if(method === 'IC') {
+                        icType = document.querySelector('#icTypeGroup .active').dataset.val;
+                        if(icType === 'Charge') icSource = document.querySelector('#icSourceGroup .active').dataset.val;
+                    }
+                    
+                    const splitEls = document.querySelectorAll('#expenseSplitGroup .active');
+                    let split = Array.from(splitEls).map(el => el.dataset.val);
+                    
+                    if(!amt) return alert('金額？'); 
+                    // 如果沒選分攤人，自動設定為付款人自己 (個人消費)
+                    if(split.length === 0) split = [payer];
+
+                    const expenseObj = {amt, desc, payer, curr, method, split, icType, icSource};
+                    if(linkEvtIdx !== "") {
+                        expenseObj.linkEvtIdx = parseInt(linkEvtIdx);
+                        if(App.state.tripData[dIdx].events[linkEvtIdx]) App.state.tripData[dIdx].events[linkEvtIdx].hasExpense = true;
+                    }
+
+                    App.state.tripData[dIdx].expenses.push(expenseObj);
+                    App.data.save(); App.ui.closeModal('modalExpense');
+                    
+                    if(App.state.currentTab == 4) App.ui.switchTab(4); 
+                    else {
+                        App.ui.switchTab(dIdx + 5);
+                    }
+                },
+                delExpense(dIdx, idx) {
+                    const exp = App.state.tripData[dIdx].expenses[idx];
+                    if(exp.linkEvtIdx !== undefined && App.state.tripData[dIdx].events[exp.linkEvtIdx]) {
+                          App.state.tripData[dIdx].events[exp.linkEvtIdx].hasExpense = false;
+                    }
+                    App.state.tripData[dIdx].expenses.splice(idx, 1);
+                    App.data.save();
+                    
+                    if(App.state.currentTab == 4) App.ui.switchTab(4);
+                    else {
+                        App.ui.switchTab(parseInt(dIdx) + 5);
+                    }
+                },
+
+                exportData() {
+                    const stats = App.utils.calcStats();
+                    const currName = App.state.settings.currencyName || 'JPY';
+                    const debt = App.utils.calcDebtData();
+                    const settings = App.state.settings; // Access settings
+
+                    let txt = `【lú-hîng ${App.version}】\n\n`;
+                    
+                    // Insert here
+                    txt += "=====旅行總結=====\n";
+                    txt += `地點: ${settings.destination || '未設定'}\n`;
+                    txt += `人員: ${settings.members.join('、')}\n\n`;
+
+                    // Remove blank line as requested
+                    txt += "=====消費報表=====\n";
+
+                    // 1. Receivables - Remove "1 "
+                    txt += `應收 (本次代墊費用，記得收款)\n`;
+                    let recT = 0, recL = 0;
+                    debt.twd.forEach(d => { if(d.type === 'rec') { txt += `   - ${d.target}: TWD ${d.val}\n`; recT += d.val; } });
+                    debt.local.forEach(d => { if(d.type === 'rec') { txt += `   - ${d.target}: ${currName} ${d.val}\n`; recL += d.val; } });
+                    if(recT===0 && recL===0) txt += `   無\n`;
+                    // 3. 恢復總應收統計
+                    txt += `   (總應收: TWD ${Math.ceil(recT)} / ${currName} ${Math.ceil(recL)})\n\n`;
+
+                    // 2. Payables - Remove "2 "
+                    txt += `應付 (本次欠債費用，記得還款)\n`;
+                    let payT = 0, payL = 0;
+                    debt.twd.forEach(d => { if(d.type === 'pay') { txt += `   - ${d.target}: TWD ${d.val}\n`; payT += d.val; } });
+                    debt.local.forEach(d => { if(d.type === 'pay') { txt += `   - ${d.target}: ${currName} ${d.val}\n`; payL += d.val; } });
+                    if(payT===0 && payL===0) txt += `   無\n`;
+                    // 3. 恢復總應付統計
+                    txt += `   (總應付: TWD ${Math.ceil(payT)} / ${currName} ${Math.ceil(payL)})\n\n`;
+                    
+                    // NEW SECTION: Personal Expenses
+                    txt += `個人花費 (由自己支付的個人開銷)\n`;
+                    let selfT = 0, selfL = 0;
+                    App.state.tripData.forEach(d => {
+                        d.expenses.forEach(e => {
+                            const isIcCharge = (e.method === 'IC' && e.icType === 'Charge');
+                            const me = settings.me;
+
+                            if (e.payer === me && e.split.includes(me) && !isIcCharge) {
+                                const shareAmt = Math.ceil(e.amt / e.split.length);
+                                const currency = e.curr === 'TWD' ? 'TWD' : currName;
+                                if(e.curr === 'TWD') selfT += shareAmt;
+                                else selfL += shareAmt;
+                                
+                                txt += `   - ${e.desc}: ${currency} ${shareAmt}\n`;
+                            }
+                        });
+                    });
+                    if(selfT===0 && selfL===0) txt += `   無\n`;
+                    txt += `   (總個人花費: TWD ${Math.ceil(selfT)} / ${currName} ${Math.ceil(selfL)})\n\n`;
+
+                    // 3. Actual Expenses (REMOVED)
+                    
+                    // Remove blank line as requested
+                    txt += `=====每日明細=====\n`;
+                    
+                    App.state.tripData.forEach((d, i) => {
+                        // Remove brackets as requested
+                        // Fix spacing: Only add blank line BEFORE dates except the very first one
+                        if (i > 0) txt += `\n`; 
+                        txt += `${d.dateStr}\n`;
+                        
+                        if(d.events.length > 0) {
+                            txt += `[事件]\n`;
+                            d.events.forEach(e => txt += ` - ${e.title}${e.note ? '：'+e.note : ''}\n`);
+                        }
+                        if(d.expenses.length > 0) {
+                            txt += `[消費]\n`;
+                            d.expenses.forEach(e => {
+                                let m = e.method; if(m=='Cash')m='現金'; if(m=='Credit')m='刷卡'; if(m=='IC')m='IC卡';
+                                let currency = e.curr === 'TWD' ? 'TWD' : currName;
+                                txt += ` - ${e.desc} (${e.payer}) : ${currency} ${e.amt}\n`;
+                            });
+                        }
+                    });
+
+                    document.getElementById('modalTextTitle').innerText = "匯出報表";
+                    document.getElementById('modalTextArea').value = txt;
+                    App.ui.openModal('modalText');
+                },
+                copyText() { document.getElementById('modalTextArea').select(); document.execCommand('copy'); alert("已複製"); }
+            },
+
+            utils: {
+                getLocalDateStr: (d = new Date()) => {
+                    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                },
+                updateDate: () => {
+                    const dStr = App.utils.getLocalDateStr();
+                    document.getElementById('headerDate').innerText = dStr;
+                },
+                fmt: (n) => Math.ceil(n).toLocaleString(),
+                calcStats: () => {
+                    let s = { 
+                        myConsumption: {TWD:0, Local:0},
+                        cash:{Local:0,TWD:0}, credit:{Local:0,TWD:0}, ic:{Local:0,TWD:0} 
+                    };
+                    const me = App.state.settings.me;
+                    
+                    App.state.tripData.forEach(d => {
+                        d.expenses.forEach(e => {
+                            const isIcCharge = (e.method === 'IC' && e.icType === 'Charge');
+                            
+                            if(e.split.includes(me) && !isIcCharge) {
+                                const shareAmt = Math.ceil(e.amt / e.split.length); 
+                                if(e.curr === 'TWD') s.myConsumption.TWD += shareAmt;
+                                else s.myConsumption.Local += shareAmt;
+                            }
+                            if(e.payer === me) {
+                                let target = null;
+                                if(e.method === 'Cash') target = s.cash;
+                                else if(e.method === 'Credit') target = s.credit;
+                                else if(e.method === 'IC') {
+                                    if(e.icType === 'Charge') {
+                                        if(e.icSource === 'Cash') target = s.cash;
+                                        else if(e.icSource === 'Credit') target = s.credit;
+                                    }
+                                    else if(e.icType === 'Spend') target = s.ic;
+                                }
+                                if(target) {
+                                    if(e.curr === 'TWD') target.TWD += e.amt; else target.Local += e.amt;
+                                }
+                            }
+                        });
+                    });
+                    return s;
+                },
+                
+                // 新版分帳邏輯：以我(Me)為中心的雙向債權計算
+                calcDebtData: () => {
+                    const me = App.state.settings.me;
+                    // 正數表示別人欠我(應收)，負數表示我欠別人(應付)
+                    const debtMapTWD = {};
+                    const debtMapLocal = {};
+
+                    // 初始化
+                    App.state.settings.members.forEach(m => {
+                        if(m !== me) {
+                            debtMapTWD[m] = 0;
+                            debtMapLocal[m] = 0;
+                        }
+                    });
+
+                    App.state.tripData.forEach(d => {
+                        d.expenses.forEach(e => {
+                            // 排除 IC 加值本身 (那是資金轉移)
+                            if(e.method === 'IC' && e.icType === 'Charge') return;
+
+                            const isTWD = (e.curr === 'TWD');
+                            // 單人分攤金額 (無條件進位)
+                            const share = Math.ceil(e.amt / e.split.length);
+
+                            // 情況 1：我是付款人
+                            if (e.payer === me) {
+                                e.split.forEach(member => {
+                                    if (member !== me) {
+                                        // member 欠我 share
+                                        if(isTWD) debtMapTWD[member] = (debtMapTWD[member] || 0) + share;
+                                        else debtMapLocal[member] = (debtMapLocal[member] || 0) + share;
+                                    }
+                                });
+                            }
+                            // 情況 2：別人是付款人，且我有參與分攤
+                            else if (e.split.includes(me)) {
+                                const payer = e.payer;
+                                // 我欠 payer share
+                                if(isTWD) debtMapTWD[payer] = (debtMapTWD[payer] || 0) - share;
+                                else debtMapLocal[payer] = (debtMapLocal[payer] || 0) - share;
+                            }
+                        });
+                    });
+
+                    // 整理輸出格式
+                    const res = { twd: [], local: [] };
+                    
+                    for (let m in debtMapTWD) {
+                        const val = debtMapTWD[m];
+                        if (val > 0) res.twd.push({ type: 'rec', target: m, val: val });
+                        if (val < 0) res.twd.push({ type: 'pay', target: m, val: Math.abs(val) });
+                    }
+                    
+                    for (let m in debtMapLocal) {
+                        const val = debtMapLocal[m];
+                        if (val > 0) res.local.push({ type: 'rec', target: m, val: val });
+                        if (val < 0) res.local.push({ type: 'pay', target: m, val: Math.abs(val) });
+                    }
+                    
+                    return res;
+                }
+            }
+        };
+
+        window.onload = () => { 
+            try { App.data.init(); if(!App.state.settings) throw new Error("Data Corrupted"); App.ui.init(); } 
+            catch(e) { console.error(e); if(confirm("資料異常，是否重置？")) { localStorage.clear(); location.reload(); } }
+        };
+        // 註冊 SW 並監聽更新
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                // 監聽是否發現新版本
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        // 當新 SW 狀態變為 installed 且目前已有 controller (表示非初次安裝)
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            if(confirm("lú-hîng 有新版本，是否立即更新？")) {
+                                window.location.reload();
+                            }
+                        }
+                    });
+                });
+            });
+            // 當新 SW 接管後，重新整理頁面 (確保邏輯切換)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
+        }
+    </script>
+</body>
+</html>
