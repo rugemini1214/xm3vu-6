@@ -1,4 +1,4 @@
-const CACHE_NAME = 'luhing-cache-v01.13'; // 更新版本號以觸發客戶端更新
+const CACHE_NAME = 'luhing-cache-v01.14'; // 更新版本號以觸發客戶端更新
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
