@@ -440,7 +440,7 @@
 
     <script>
         const App = {
-            version: 'v01.14', // Version bump for PWA padding
+            version: 'v01.15', // Version bump for new feature
             state: {
                 tripData: [], preTripList: [], todoList: [],
                 settings: { baseRate: 0.215, currencyName: 'JPY', destination: '東京', members: ['我'], me: '我' },
@@ -586,6 +586,7 @@
                             h += `<div class="block-item">
                                 <div style="flex:1;">${item.title}</div>
                                 <div style="display:flex; gap:5px;">
+                                    <div class="btn-icon" onclick="App.handlers.searchMap(${idx})">📍</div>
                                     <div class="btn-icon" onclick="App.ui.openEditTodo(${idx})">✎</div>
                                     <div class="btn-icon" onclick="App.handlers.delTodo(${idx})">✕</div>
                                     <div class="btn-sm" onclick="App.ui.openCompleteModal(${idx})">完成</div>
@@ -814,6 +815,12 @@
                     document.getElementById('editTodoText').value = item.title;
                     document.getElementById('editTodoTag').value = item.tag;
                     App.ui.openModal('modalEditTodo');
+                },
+                searchMap(idx) {
+                    const item = App.state.todoList[idx];
+                    if(item && item.title) {
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.title)}`, '_blank');
+                    }
                 }
             },
 
@@ -1069,7 +1076,15 @@
                     document.getElementById('modalTextArea').value = txt;
                     App.ui.openModal('modalText');
                 },
-                copyText() { document.getElementById('modalTextArea').select(); document.execCommand('copy'); alert("已複製"); }
+                copyText() { document.getElementById('modalTextArea').select(); document.execCommand('copy'); alert("已複製"); },
+                
+                // Add searchMap helper
+                searchMap(idx) {
+                    const item = App.state.todoList[idx];
+                    if(item && item.title) {
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.title)}`, '_blank');
+                    }
+                }
             },
 
             utils: {
