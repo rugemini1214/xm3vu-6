@@ -377,6 +377,16 @@
             <div class="form-group" id="commonTagSection" style="display:none;"><label class="form-label">分類</label>
                 <select id="commonInputTag" class="form-select"><option value="購物">購物</option><option value="飲食">飲食</option><option value="景點">景點</option><option value="其他">其他</option></select>
             </div>
+            
+            <!-- v01.15: 新增待辦的額外欄位 -->
+            <div id="todoExtraSection" style="display:none;">
+                <div class="form-group"><label class="form-label">備註 (列表不顯示)</label><textarea id="commonInputNote" class="form-input" placeholder="選填"></textarea></div>
+                <div style="margin-bottom:15px; display:flex; align-items:center;">
+                    <input type="checkbox" id="commonInputIsLoc" style="width:18px; height:18px; margin-right:8px; accent-color:var(--accent-color);">
+                    <label for="commonInputIsLoc" style="font-size:14px; color:var(--text-main);">設為地點項目 (顯示地圖搜尋)</label>
+                </div>
+            </div>
+
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalCommonInput')">取消</button>
                 <button class="btn-primary" style="margin-top:0;" onclick="App.handlers.saveCommonInput()">新增</button>
@@ -393,6 +403,14 @@
             <div class="form-group"><label class="form-label">分類</label>
                 <select id="editTodoTag" class="form-select"><option value="購物">購物</option><option value="飲食">飲食</option><option value="景點">景點</option><option value="其他">其他</option></select>
             </div>
+            
+            <!-- v01.15: 編輯待辦的額外欄位 -->
+            <div class="form-group"><label class="form-label">備註 (列表不顯示)</label><textarea id="editTodoNote" class="form-input" placeholder="選填"></textarea></div>
+            <div style="margin-bottom:15px; display:flex; align-items:center;">
+                <input type="checkbox" id="editTodoIsLoc" style="width:18px; height:18px; margin-right:8px; accent-color:var(--accent-color);">
+                <label for="editTodoIsLoc" style="font-size:14px; color:var(--text-main);">設為地點項目 (顯示地圖搜尋)</label>
+            </div>
+
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="btn-primary" style="background:#eee; color:#666; margin-top:0;" onclick="App.ui.closeModal('modalEditTodo')">取消</button>
                 <button class="btn-primary" style="margin-top:0;" onclick="App.handlers.saveEditTodo()">儲存</button>
@@ -584,9 +602,12 @@
                         items.forEach((item) => {
                             const idx = App.state.todoList.indexOf(item);
                             h += `<div class="block-item">
-                                <div style="flex:1;">${item.title}</div>
+                                <div style="flex:1;">
+                                    ${item.title}
+                                    ${item.note ? `<div style="display:none;">${item.note}</div>` : ''} <!-- Hidden note stored for logic, visual kept clean -->
+                                </div>
                                 <div style="display:flex; gap:5px;">
-                                    <div class="btn-icon" onclick="App.handlers.searchMap(${idx})">📍</div>
+                                    ${item.isLocation ? `<div class="btn-icon" onclick="App.handlers.searchMap(${idx})">📍</div>` : ''}
                                     <div class="btn-icon" onclick="App.ui.openEditTodo(${idx})">✎</div>
                                     <div class="btn-icon" onclick="App.handlers.delTodo(${idx})">✕</div>
                                     <div class="btn-sm" onclick="App.ui.openCompleteModal(${idx})">完成</div>
@@ -760,6 +781,17 @@
                     document.getElementById('commonInputText').value = '';
                     document.getElementById('commonModalTitle').innerText = type==='todo' ? '新增待辦' : '新增行前項目';
                     document.getElementById('commonTagSection').style.display = type==='todo' ? 'block' : 'none';
+                    
+                    // v01.15: Handle visibility of extra fields for todo
+                    const extra = document.getElementById('todoExtraSection');
+                    if(type==='todo') {
+                        extra.style.display = 'block';
+                        document.getElementById('commonInputNote').value = '';
+                        document.getElementById('commonInputIsLoc').checked = false;
+                    } else {
+                        extra.style.display = 'none';
+                    }
+                    
                     App.ui.openModal('modalCommonInput');
                 },
 
@@ -798,7 +830,10 @@
 
                 openCompleteModal(idx) {
                     document.getElementById('completeTodoIdx').value = idx;
-                    document.getElementById('completeNote').value = '';
+                    const item = App.state.todoList[idx];
+                    // v01.15: Pre-fill note
+                    document.getElementById('completeNote').value = item.note || '';
+                    
                     const ts = document.getElementById('completeTargetDay');
                     const todayStr = new Date().toISOString().split('T')[0];
                     let defaultIdx = 0;
@@ -814,6 +849,9 @@
                     document.getElementById('editTodoIdx').value = idx;
                     document.getElementById('editTodoText').value = item.title;
                     document.getElementById('editTodoTag').value = item.tag;
+                    // v01.15: Load extra fields
+                    document.getElementById('editTodoNote').value = item.note || '';
+                    document.getElementById('editTodoIsLoc').checked = item.isLocation || false;
                     App.ui.openModal('modalEditTodo');
                 },
                 searchMap(idx) {
@@ -862,7 +900,10 @@
                     if(t) {
                         if(type === 'todo') {
                             const tag = document.getElementById('commonInputTag').value;
-                            App.state.todoList.push({title:t, tag:tag});
+                            // v01.15: Save extra fields
+                            const note = document.getElementById('commonInputNote').value;
+                            const isLoc = document.getElementById('commonInputIsLoc').checked;
+                            App.state.todoList.push({title:t, tag:tag, note:note, isLocation:isLoc});
                             App.ui.switchTab(2);
                         } else {
                             App.state.preTripList.push({title:t, done:false});
@@ -878,7 +919,14 @@
                     const idx = document.getElementById('editTodoIdx').value;
                     const t = document.getElementById('editTodoText').value;
                     const tag = document.getElementById('editTodoTag').value;
-                    if(t) { App.state.todoList[idx] = {title:t, tag:tag}; App.data.save(); App.ui.closeModal('modalEditTodo'); App.ui.switchTab(2); }
+                    // v01.15: Save extra fields
+                    const note = document.getElementById('editTodoNote').value;
+                    const isLoc = document.getElementById('editTodoIsLoc').checked;
+                    
+                    if(t) { 
+                        App.state.todoList[idx] = {title:t, tag:tag, note:note, isLocation:isLoc}; 
+                        App.data.save(); App.ui.closeModal('modalEditTodo'); App.ui.switchTab(2); 
+                    }
                 },
                 delTodo(idx) { if(confirm("刪除？")) { App.state.todoList.splice(idx,1); App.data.save(); App.ui.switchTab(2); } },
 
