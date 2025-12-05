@@ -68,6 +68,16 @@
             font-family: inherit; outline: none; border: none; appearance: none; 
             font-size: 15px; 
         }
+        
+        /* 修正 Checkbox 顯示問題：覆寫 appearance:none */
+        input[type="checkbox"] {
+            -webkit-appearance: checkbox;
+            appearance: checkbox;
+            border: 1px solid var(--line-color);
+            border-radius: 4px;
+            background: #fff;
+        }
+
         a { color: inherit; text-decoration: none; }
 
         /* Header */
@@ -458,7 +468,7 @@
 
     <script>
         const App = {
-            version: 'v01.15', // Version bump for new feature
+            version: 'v01.16', // Version bump for css fix
             state: {
                 tripData: [], preTripList: [], todoList: [],
                 settings: { baseRate: 0.215, currencyName: 'JPY', destination: '東京', members: ['我'], me: '我' },
