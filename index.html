@@ -468,7 +468,7 @@
 
     <script>
         const App = {
-            version: 'v01.16', // Version bump for css fix
+            version: 'v01.17', // Version bump for css fix
             state: {
                 tripData: [], preTripList: [], todoList: [],
                 settings: { baseRate: 0.215, currencyName: 'JPY', destination: '東京', members: ['我'], me: '我' },
@@ -661,16 +661,21 @@
                     const stats = App.utils.calcStats();
                     const fmt = App.utils.fmt;
                     const curr = App.state.settings.currencyName || 'JPY';
-                    const getW = (v) => Math.min((v/300), 100); 
+                    const rate = App.state.settings.baseRate || 0.215; // Get rate
+                    
+                    // Helper to calc total TWD for progress bar
+                    const getTotalTwd = (statObj) => statObj.TWD + (statObj.Local * rate);
+                    
+                    const getW = (twd, local) => Math.min(((twd + local * rate)/300), 100); 
 
                     c.innerHTML = `
                         <button class="btn-primary" style="margin-top:0; margin-bottom:20px;" onclick="App.ui.openExpenseModal()">＋ 新增消費紀錄</button>
                         
                         <div class="section-title">消費分佈 (1% = 300 TWD)</div>
                         <div style="background:#fff; padding:15px; border-radius:var(--radius-std); border:1px solid var(--line-color); margin-bottom:20px;">
-                            <div class="progress-row"><div class="progress-header"><span>現金</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.cash.TWD)}%; background:var(--color-cash);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.cash.TWD)}</span> + ${curr} ${fmt(stats.cash.Local)}</div></div>
-                            <div class="progress-row"><div class="progress-header"><span>刷卡</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.credit.TWD)}%; background:var(--color-credit);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.credit.TWD)}</span> + ${curr} ${fmt(stats.credit.Local)}</div></div>
-                            <div class="progress-row"><div class="progress-header"><span>IC卡</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.ic.TWD)}%; background:var(--color-ic);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.ic.TWD)}</span> + ${curr} ${fmt(stats.ic.Local)}</div></div>
+                            <div class="progress-row"><div class="progress-header"><span>現金</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.cash.TWD, stats.cash.Local)}%; background:var(--color-cash);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.cash.TWD)}</span> + ${curr} ${fmt(stats.cash.Local)}</div></div>
+                            <div class="progress-row"><div class="progress-header"><span>刷卡</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.credit.TWD, stats.credit.Local)}%; background:var(--color-credit);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.credit.TWD)}</span> + ${curr} ${fmt(stats.credit.Local)}</div></div>
+                            <div class="progress-row"><div class="progress-header"><span>IC卡</span></div><div class="progress-track"><div class="progress-fill" style="width:${getW(stats.ic.TWD, stats.ic.Local)}%; background:var(--color-ic);"></div></div><div class="progress-amounts"><span class="curr-twd">TWD ${fmt(stats.ic.TWD)}</span> + ${curr} ${fmt(stats.ic.Local)}</div></div>
                         </div>
 
                         <div class="section-title">分帳狀態 (TWD)</div>
